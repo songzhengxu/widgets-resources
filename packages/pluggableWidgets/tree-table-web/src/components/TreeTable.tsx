@@ -9,7 +9,6 @@ import {
     SyntheticEvent,
     useCallback,
     useContext,
-    useEffect,
     useLayoutEffect,
     useRef,
     useState
@@ -28,7 +27,6 @@ import {
     useInformParentContextOfChildNodes
 } from "./TreeTableBranchContext";
 
-import { useTreeTableLazyLoading } from "./hooks/lazyLoading";
 import { useAnimatedTreeTableContentHeight } from "./hooks/useAnimatedHeight";
 import { Big } from "big.js";
 
@@ -185,7 +183,6 @@ function TreeTableBranch(props: TreeTableBranchProps): ReactElement {
 
     const informParentOfChildNodes = useCallback<TreeTableBranchContextProps["informParentOfChildNodes"]>(
         numberOfNodes => {
-            console.warn("Number of nodes", numberOfNodes);
             if (numberOfNodes !== undefined) {
                 setTreeTableState(treeTableState =>
                     treeTableState === TreeTableState.LOADING ? TreeTableState.EXPANDED : treeTableState
@@ -203,10 +200,10 @@ function TreeTableBranch(props: TreeTableBranchProps): ReactElement {
         []
     );
 
-    const treeTableBranchBody = useRef<HTMLDivElement>(null);
+    const [treeTableBranchBody, setTreeTableBranchBody] = useState<HTMLDivElement | null>(null);
     const treeTableBranchRef = useRef<HTMLDivElement>(null);
 
-    const { hasNestedTreeTable } = useTreeTableLazyLoading(treeTableBranchBody);
+    // const { hasNestedTreeTable } = useTreeTableLazyLoading(treeTableBranchBody);
     const {
         isAnimating,
         captureElementHeight,
@@ -232,13 +229,17 @@ function TreeTableBranch(props: TreeTableBranchProps): ReactElement {
         );
     }, []);
 
-    useEffect(() => {
-        if (treeTableState === TreeTableState.LOADING) {
-            if (!hasNestedTreeTable()) {
-                setTreeTableState(TreeTableState.EXPANDED);
-            }
-        }
-    }, [hasNestedTreeTable, treeTableState]);
+    // TODO: Unused method, value of hasNestedTreeTable is always true
+    // useEffect(() => {
+    //     if (treeTableState === TreeTableState.LOADING) {
+    //         if (!hasNestedTreeTable()) {
+    //             console.warn("not nested");
+    //             setTreeTableState(TreeTableState.EXPANDED);
+    //         } else {
+    //             console.warn("has nested");
+    //         }
+    //     }
+    // }, [hasNestedTreeTable, treeTableState]);
 
     const toggleTreeTableContent = useCallback<ReactEventHandler<HTMLDivElement>>(
         event => {
@@ -285,6 +286,8 @@ function TreeTableBranch(props: TreeTableBranchProps): ReactElement {
         [toggleTreeTableContent, eventTargetIsNotCurrentBranch]
     );
 
+    const setBranchBodyRefFn = useCallback((ref: HTMLDivElement) => setTreeTableBranchBody(ref), []);
+
     return (
         <div
             className={classNames("widget-tree-table-row", {
@@ -324,7 +327,7 @@ function TreeTableBranch(props: TreeTableBranchProps): ReactElement {
                         })}
                         id={treeTableBranchUtils.getBodyId(props.id)}
                         aria-hidden={treeTableState !== TreeTableState.EXPANDED}
-                        ref={treeTableBranchBody}
+                        ref={setBranchBodyRefFn}
                         onTransitionEnd={cleanupAnimation}
                         style={{ gridColumn: "span " + props.columns.length }}
                     >
