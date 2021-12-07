@@ -1,12 +1,9 @@
 import { existsSync, mkdirSync } from "fs";
 import { join, relative } from "path";
 import alias from "@rollup/plugin-alias";
-import { getBabelInputPlugin, getBabelOutputPlugin } from "@rollup/plugin-babel";
 import commonjs from "@rollup/plugin-commonjs";
 import image from "@rollup/plugin-image";
 import { nodeResolve } from "@rollup/plugin-node-resolve";
-import replace from "rollup-plugin-re";
-import typescript from "@rollup/plugin-typescript";
 import url from "@rollup/plugin-url";
 import { red, yellow, blue } from "colors";
 import postcssImport from "postcss-import";
@@ -17,7 +14,6 @@ import command from "rollup-plugin-command";
 import license from "rollup-plugin-license";
 import livereload from "rollup-plugin-livereload";
 import postcss from "rollup-plugin-postcss";
-import { terser } from "rollup-plugin-terser";
 import { cp } from "shelljs";
 import { zip } from "zip-a-folder";
 import { widgetTyping } from "./rollup-plugin-widget-typing";
@@ -32,6 +28,7 @@ import {
     widgetPackage,
     widgetVersion
 } from "./shared";
+import { esBuild } from "./rollup-plugin-esbuild";
 
 const outDir = join(sourcePath, "/dist/tmp/widgets/");
 const outWidgetFile = join(widgetPackage.replace(/\./g, "/"), widgetName.toLowerCase(), `${widgetName}`);
@@ -156,33 +153,15 @@ export default async args => {
     function getCommonPlugins(config) {
         return [
             nodeResolve({ preferBuiltins: false, mainFields: ["module", "browser", "main"] }),
-            isTypescript
-                ? typescript({
-                      noEmitOnError: !args.watch,
-                      sourceMap: config.sourceMaps,
-                      inlineSources: config.sourceMaps,
-                      target: "es2019" // we transpile the result with babel anyway, see below
-                  })
-                : null,
-            // Babel can transpile source JS and resulting JS, hence are input/output plugins. The good
-            // practice is to do the most of conversions on resulting code, since then we ensure that
-            // babel doesn't interfere with `import`s and `require`s used by rollup/commonjs plugin;
-            // also resulting code includes generated code that deserve transpilation as well.
-            getBabelInputPlugin({
-                sourceMaps: config.sourceMaps,
-                babelrc: false,
-                babelHelpers: "bundled",
-                plugins: ["@babel/plugin-proposal-class-properties"],
-                overrides: [
-                    {
-                        test: /node_modules/,
-                        plugins: ["@babel/plugin-transform-flow-strip-types", "@babel/plugin-transform-react-jsx"]
-                    },
-                    {
-                        exclude: /node_modules/,
-                        plugins: [["@babel/plugin-transform-react-jsx", { pragma: "createElement" }]]
-                    }
-                ]
+            esBuild({
+                sourceMap: config.sourceMaps,
+                minify: production,
+                target: "es2019",
+                // format: "cjs",
+                // Like @rollup/plugin-replace  TODO: Not working
+                define: {
+                    "process.env.NODE_ENV": production ? "'production'" : "'development'"
+                }
             }),
             commonjs({
                 extensions: config.extensions,
@@ -190,24 +169,8 @@ export default async args => {
                 requireReturnsDefault: "auto",
                 ignore: id => (config.external || []).some(value => new RegExp(value).test(id))
             }),
-            replace({
-                patterns: [
-                    {
-                        test: "process.env.NODE_ENV",
-                        replace: production ? "'production'" : "'development'"
-                    }
-                ]
-            }),
-            config.transpile
-                ? getBabelOutputPlugin({
-                      sourceMaps: config.sourceMaps,
-                      babelrc: false,
-                      compact: false,
-                      ...(config.babelConfig || {})
-                  })
-                : null,
             image(),
-            production ? terser() : null,
+            // production ? terser() : null,
             config.licenses
                 ? license({
                       thirdParty: {
