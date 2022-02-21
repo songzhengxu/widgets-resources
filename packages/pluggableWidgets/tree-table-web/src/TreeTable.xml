@@ -18,6 +18,20 @@
                     <caption>Data source</caption>
                     <description/>
                 </property>
+                <property key="parentIdAttribute" type="attribute" dataSource="datasource" required="false">
+                    <caption>Parent id</caption>
+                    <description />
+                    <attributeTypes>
+                        <attributeType name="Integer"/>
+                    </attributeTypes>
+                </property>
+                <property key="currentIdAttribute" type="attribute" dataSource="datasource" required="false">
+                    <caption>Current id</caption>
+                    <description />
+                    <attributeTypes>
+                        <attributeType name="Integer"/>
+                    </attributeTypes>
+                </property>
                 <property key="hasChildren" type="boolean" defaultValue="true">
                     <caption>Has children</caption>
                     <description>Indicate whether the node has children or is an end node. When set to yes, a composable region becomes available to define the child nodes.</description>

@@ -40,6 +40,8 @@ export interface TreeTableContainerProps {
     tabIndex?: number;
     advancedMode: boolean;
     datasource: ListValue;
+    parentIdAttribute?: ListAttributeValue<Big>;
+    currentIdAttribute?: ListAttributeValue<Big>;
     hasChildren: boolean;
     startExpanded: boolean;
     children?: ListWidgetValue;
@@ -56,6 +58,8 @@ export interface TreeTablePreviewProps {
     style: string;
     advancedMode: boolean;
     datasource: {} | { type: string } | null;
+    parentIdAttribute: string;
+    currentIdAttribute: string;
     hasChildren: boolean;
     startExpanded: boolean;
     children: { widgetCount: number; renderer: ComponentType<{ caption?: string }> };

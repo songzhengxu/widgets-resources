@@ -1,32 +1,62 @@
-import { createElement } from "react";
+import { createElement, useRef, useState, useCallback, useEffect } from "react";
 import { TreeTableContainerProps } from "../typings/TreeTableProps";
-import { TreeTable as TreeTableComponent, TreeTableObject } from "./components/TreeTable";
-import { ObjectItem, ValueStatus } from "mendix";
+import { TreeTable as TreeTableComponent } from "./components/TreeTable";
+import { ObjectItem, ValueStatus, GUID } from "mendix";
+import { equals, attribute, literal } from "mendix/filters/builders";
 
 import "./ui/TreeTable.scss";
 
-function mapDataSourceItemToTreeNodeObject(item: ObjectItem, props: TreeTableContainerProps): TreeTableObject {
-    return {
-        id: item.id,
-        columns: props.columns.map(c => ({ ...c, attribute: c.attribute?.get(item)?.value ?? "" })),
-        content: props.children?.get(item)
-    };
-}
-
 export function TreeTable(props: TreeTableContainerProps) {
-    const items =
-        props.datasource.status === ValueStatus.Available
-            ? props.datasource.items?.map(item => mapDataSourceItemToTreeNodeObject(item, props)) ?? []
-            : null;
+    const hasCapturedItems = useRef<boolean>(false);
+    const [capturedItems, setCapturedItems] = useState<ObjectItem[] | undefined>(undefined);
+    const [renderTreeTableFor, setRenderTreeTableFor] = useState<GUID[]>([]);
+
+    useEffect(() => {
+        if (!hasCapturedItems.current && props.datasource.status === ValueStatus.Available) {
+            setCapturedItems(props.datasource.items);
+            hasCapturedItems.current = true;
+        }
+    }, [props.datasource]);
+
+    const requestChildrenItems = useCallback(
+        (item: ObjectItem) => {
+            if (props.parentIdAttribute?.id) {
+                props.datasource.setFilter(
+                    equals(attribute(props.parentIdAttribute?.id), literal(props.currentIdAttribute?.get(item).value))
+                );
+                setTimeout(
+                    () =>
+                        setRenderTreeTableFor(currentValue => {
+                            if (currentValue.includes(item.id)) {
+                                return currentValue;
+                            }
+                            return [...currentValue, item.id];
+                        }),
+                    1000
+                );
+            }
+        },
+        [props.parentIdAttribute?.id, props.datasource, props.currentIdAttribute]
+    );
 
     const expandedIcon = props.expandedIcon?.status === ValueStatus.Available ? props.expandedIcon.value : null;
     const collapsedIcon = props.collapsedIcon?.status === ValueStatus.Available ? props.collapsedIcon.value : null;
 
     return (
         <TreeTableComponent
+            datasource={props.datasource}
             class={props.class}
             style={props.style}
-            items={items}
+            items={
+                capturedItems?.map(item => ({
+                    id: item.id,
+                    columns: props.columns.map(c => ({ ...c, attribute: c.attribute?.get(item)?.value ?? "" })),
+                    content: renderTreeTableFor.includes(item.id) ? (
+                        <TreeTable key={item.id} {...props} name={`${props.name}-${item.id}`} />
+                    ) : null,
+                    onClick: () => requestChildrenItems(item)
+                })) ?? null
+            }
             columnHeaders={props.columns.map(c => ({
                 header: c.header?.value ?? "",
                 alignment: c.alignment,

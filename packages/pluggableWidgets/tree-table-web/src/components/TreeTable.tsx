@@ -45,9 +45,10 @@ export interface Column {
 export interface TreeTableObject extends ObjectItem {
     columns: Column[];
     content: ReactNode;
+    onClick: () => void;
 }
 
-export interface TreeTableProps extends Pick<TreeTableContainerProps, "tabIndex"> {
+export interface TreeTableProps extends Pick<TreeTableContainerProps, "tabIndex" | "datasource"> {
     class: string;
     style?: CSSProperties;
     items: TreeTableObject[] | null;
@@ -95,7 +96,7 @@ export function TreeTable({
         return null;
     }
 
-    const itemsElement = items.map(({ id, columns, content }) => (
+    const itemsElement = items.map(({ id, columns, content, onClick }) => (
         <TreeTableBranch
             key={id}
             id={id}
@@ -103,6 +104,7 @@ export function TreeTable({
             isUserDefinedLeafNode={isUserDefinedLeafNode}
             startExpanded={startExpanded}
             iconPlacement={iconPlacement}
+            onClick={onClick}
             // renderHeaderIcon={renderHeaderIcon}
             // changeFocus={changeTreeTableBranchHeaderFocus}
             animateTreeTableContent={animateTreeTableContent}
@@ -151,6 +153,7 @@ interface TreeTableBranchProps {
     // renderHeaderIcon: (treeTableState: TreeTableState, iconPlacement: Exclude<ShowIconEnum, "no">) => ReactNode;
     // changeFocus: TreeTableFocusChangeHandler;
     animateTreeTableContent: boolean;
+    onClick: () => void;
 }
 
 const treeTableBranchUtils = {
@@ -179,7 +182,7 @@ function TreeTableBranch(props: TreeTableBranchProps): ReactElement {
     const [treeTableState, setTreeTableState] = useState<TreeTableState>(
         props.startExpanded ? TreeTableState.EXPANDED : TreeTableState.COLLAPSED_WITH_JS
     );
-    const [isActualLeafNode, setIsActualLeafNode] = useState<boolean>(props.isUserDefinedLeafNode || !props.children);
+    const [isActualLeafNode, setIsActualLeafNode] = useState<boolean>(false);
 
     const informParentOfChildNodes = useCallback<TreeTableBranchContextProps["informParentOfChildNodes"]>(
         numberOfNodes => {
@@ -281,9 +284,10 @@ function TreeTableBranch(props: TreeTableBranchProps): ReactElement {
             if (eventTargetIsNotCurrentBranch(event)) {
                 return;
             }
+            props.onClick();
             toggleTreeTableContent(event);
         },
-        [toggleTreeTableContent, eventTargetIsNotCurrentBranch]
+        [eventTargetIsNotCurrentBranch, props.onClick, toggleTreeTableContent]
     );
 
     const setBranchBodyRefFn = useCallback((ref: HTMLDivElement) => setTreeTableBranchBody(ref), []);
@@ -308,7 +312,7 @@ function TreeTableBranch(props: TreeTableBranchProps): ReactElement {
                     onClick={onTreeTableClick}
                     className="widget-tree-table-column"
                 >
-                    {column.attribute}
+                    {column.attribute instanceof Big ? column.attribute.toNumber() : column.attribute}
                 </div>
             ))}
             {((!isActualLeafNode && treeTableState !== TreeTableState.COLLAPSED_WITH_JS) || isAnimating) && (
