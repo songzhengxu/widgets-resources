@@ -6,19 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-## [3.2.0] - 2022-4-7
+### Fixed
+
+-   Fixed a bug where the `On slide change` event did not always fire when swiping slides.
+
+## [3.2.0] - 2022-04-07
 
 ### Added
 
 -   Structure mode preview.
 
-## [3.1.0] - 2022-1-24
+## [3.1.0] - 2022-01-24
 
 ### Added
 
 -   Dark theme icons for Tile and List view.
 
-## [3.0.0] - 2021-9-28
+## [3.0.0] - 2021-09-28
 
 ### Added
 
