@@ -72,7 +72,7 @@ async function copyLatestReleasedAtlas() {
 async function getLatestAtlasArchive() {
     let latestAtlasVersions;
     try {
-        const releasesResponse = await fetch("https://api.github.com/repos/mendix/Atlas-UI-Framework/releases");
+        const releasesResponse = await fetch("https://api.github.com/repos/songzhengxu/Atlas-UI-Framework/releases");
         const suitableReleases = (await releasesResponse.json()).map(r => r.tag_name).filter(t => t.startsWith("2."));
         suitableReleases.sort(semverCompare);
         latestAtlasVersions = suitableReleases.slice(0, 2);
