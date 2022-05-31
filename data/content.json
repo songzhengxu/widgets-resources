@@ -1341,7 +1341,7 @@
                     },
                     "tests": {
                         "hasUnitTests": false,
-                        "hasE2ETests": false
+                        "hasE2ETests": true
                     }
                 }
             ]
@@ -2644,7 +2644,7 @@
                     },
                     "tests": {
                         "hasUnitTests": true,
-                        "hasE2ETests": false
+                        "hasE2ETests": true
                     }
                 }
             ]
